@@ -1,11 +1,13 @@
+#define delaytime (1000000 / baudrate)    //delay with cpu cycle compensation
+#define startBitDelayTime ((250000 / baudrate) + 1)   //slight clock skew
 
-#define datarate (1000000 / baudrate)     //delay
-
+//lmao
 void transmitter_init() {
-  pinMode(txpin, OUTPUT);
-  digitalWrite(txpin, LOW);
+  txDDR = txDDR | B00000001;          //PB0 on the attiny13
+  fastWrite(LOW);
 }
 
+//transmits data pre-converting everything. Uses a little more sketch space, although very accurate and has the ability to output at very high speeds
 void transmitBuffered(int data1, int data0) {
   bool dataout[32];
   //load the buffer
@@ -17,35 +19,54 @@ void transmitBuffered(int data1, int data0) {
   for (int i = 15; i > -1; i--) {
     dataout[i] = bitRead(data0, i);
   }
-
-  digitalWrite(txpin, HIGH);  //first bit is discarded
-  delayMicroseconds(datarate);
-  //Serial.println("START");
+  //start bit
+  startBit();
   for (int i = 31; i >= 0 ; i--) {
-    digitalWrite(txpin, dataout[i]);
-    delayMicroseconds(datarate);
-    //Serial.println(dataout[i]);
+    fastWrite(dataout[i]);
+    delayMicroseconds(delaytime);
   }
-  //Serial.println("DONE");
-  digitalWrite(txpin, LOW);
-  delayMicroseconds(datarate);
+  fastWrite(LOW);
+  delayMicroseconds(delaytime);
 }
 
+//transmits data doing conversion on the fly. Uses a little less sketch space, not as accurate bit banging there are more clock cycles in between
 void transmitUnBuffered(int data1, int data0) {
-  bool dataout[32];
-  //load the buffer
-  digitalWrite(txpin, HIGH);  //first bit is discarded
-  delayMicroseconds(datarate);
+  //start bit
+  startBit();
   //B1
   for (int i = 15; i > -1; i--) {
-    digitalWrite(txpin, bitRead(data1, i));
-    delayMicroseconds(datarate);
+    fastWrite(bitRead(data1, i));
+    delayMicroseconds(delaytime);
   }
   //B0
   for (int i = 15; i > -1; i--) {
-    digitalWrite(txpin, bitRead(data0, i));
-    delayMicroseconds(datarate);
+    fastWrite(bitRead(data0, i));
+    delayMicroseconds(delaytime);
   }
-  digitalWrite(txpin, LOW);
-  delayMicroseconds(datarate);
+  fastWrite(LOW);
+  delayMicroseconds(delaytime);
+}
+
+//outputs a start bit, the whole sequence fits inside 1 bit pulse. For example, if the baud was 2hz, the start bit would last 0.5 second. Output is 1010 (MSB justified)
+void startBit() {
+  fastWrite(HIGH);
+  delayMicroseconds(startBitDelayTime);
+  fastWrite(LOW);
+  delayMicroseconds(startBitDelayTime);
+  fastWrite(HIGH);
+  delayMicroseconds(startBitDelayTime);
+  fastWrite(LOW);
+  delayMicroseconds(startBitDelayTime);
+}
+
+//Low Level wiring library, use it like using digitalWrite()
+void fastWrite(int level) {
+  switch (level) {
+    case HIGH:
+      txPort = txPort | txHIGH;
+      break;
+    case LOW:
+      txPort = txPort & txLOW;
+      break;
+  }
 }
