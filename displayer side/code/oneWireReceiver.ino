@@ -2,11 +2,14 @@
 
 int data1 = 0;
 int data0 = 0;
+
+//lmao
 void receiver_init() {
   DDRD = DDRD & rxPinDDRDIR;
   pinMode(ch1DataPin, INPUT_PULLUP);
 }
 
+//detects the start bit, and reads the data that follows it
 bool readData(byte pin, bool invert) {                //return true if new data recvd   //blocking!!!
   bool StartBit[4];
   if (!fastRead(pin, invert)) {                //if the pin starts out low
@@ -41,6 +44,7 @@ bool readData(byte pin, bool invert) {                //return true if new data 
   return false;
 }
 
+//low level bit banging for digitalRead
 bool fastRead(byte pinSel, bool invert) {
   bool pinData;
   byte rxdata = rxPort;
