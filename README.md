@@ -6,8 +6,9 @@ This library is a unidirectional one-wire communication library. The inspiration
 1010, each pulse lasting 1/(baudrate * 4) seconds. It will count out the appropriate amount of bits (32) then stop.
 # How high performance you may ask?
 With using digitalRead/digitalWrite, the code in between each bang takes about 4 microseconds to run on a 16MHZ nano. 1/4us = 250kbits/sec. I have since refactored the code to do with register manipulation. A good knowledge of assembly really helps understand this.
+** its acually higher performance than that, now that register manipulation is used
 # Library wrapper?
-no
+no, high level libraries don't allow optimal performance, as there is more compiler intervention.
 # Liscense
 Joesphan Lu
 Software is without warranty.
